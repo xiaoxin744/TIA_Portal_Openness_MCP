@@ -44,7 +44,6 @@ namespace TiaMcpServer.Siemens
         private ProjectBase? _project;
         private LocalSession? _session;
         private readonly ILogger<Portal>? _logger;
-        public string? LastAddDeviceError { get; private set; }
         public string? LastConnectError { get; private set; }
 
         #region ctor
@@ -957,18 +956,18 @@ namespace TiaMcpServer.Siemens
             return GetDeviceByPath(devicePath);
         }
 
-        public Device? AddDevice(string orderNumber, string version, string deviceName)
+        public Device AddDevice(string orderNumber, string version, string deviceName)
         {
             _logger?.LogInformation($"Adding device: {deviceName}, OrderNumber={orderNumber}, Version={version}");
-            if (IsProjectNull()) return null;
+            if (IsProjectNull()) throw new PortalException(PortalErrorCode.InvalidState, "No project is open in TIA Portal");
 
+            string? lastVariantError = null;
             try
             {
-                LastAddDeviceError = null;
                 // Openness CreateWithItem expects a TypeIdentifier, not split order/version.
                 // Example: OrderNumber:6ES7 513-1AM03-0AB0/V3.0
                 var project = (_project as Project);
-                if (project == null) return null;
+                if (project == null) throw new PortalException(PortalErrorCode.InvalidState, "Current project is not a local Project instance");
 
                 var orderRaw = orderNumber ?? "";
                 var verRaw = version ?? "";
@@ -1054,17 +1053,21 @@ namespace TiaMcpServer.Siemens
                         catch (Exception exTry)
                         {
                             // try next variant
-                            LastAddDeviceError = FormatExceptionDetail(exTry);
+                            lastVariantError = FormatExceptionDetail(exTry);
                         }
                     }
                 }
 
-                return null;
+                throw new PortalException(PortalErrorCode.OpennessError,
+                    lastVariantError ?? $"AddDevice failed: no device created for OrderNumber={orderNumber} Version={version}");
+            }
+            catch (PortalException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                LastAddDeviceError = FormatExceptionDetail(ex);
-                return null;
+                throw new PortalException(PortalErrorCode.OpennessError, FormatExceptionDetail(ex), null, ex);
             }
         }
 
@@ -1141,19 +1144,13 @@ namespace TiaMcpServer.Siemens
                     try
                     {
                         var d = AddDevice(mlfb, ver, deviceName);
-                        if (d != null)
-                        {
-                            attempts.Add($"{mlfb} {ver} -> OK");
-                            return (d, mlfb, ver, attempts, null);
-                        }
-
-                        lastError = LastAddDeviceError ?? "AddDevice returned null";
-                        attempts.Add($"{mlfb} {ver} -> FAIL: {lastError}");
+                        attempts.Add($"{mlfb} {ver} -> OK");
+                        return (d, mlfb, ver, attempts, null);
                     }
                     catch (Exception ex)
                     {
                         lastError = ex.Message;
-                        attempts.Add($"{mlfb} {ver} -> EX: {ex.Message}");
+                        attempts.Add($"{mlfb} {ver} -> FAIL: {ex.Message}");
                     }
                 }
             }
@@ -1168,10 +1165,7 @@ namespace TiaMcpServer.Siemens
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (string.IsNullOrWhiteSpace(normalizedKeyword))
-            {
-                LastAddDeviceError = "Keyword is empty";
-                return results;
-            }
+                throw new PortalException(PortalErrorCode.InvalidParams, "Keyword is empty");
 
             try
             {
@@ -1196,7 +1190,7 @@ namespace TiaMcpServer.Siemens
             }
             catch (Exception ex)
             {
-                LastAddDeviceError = "HardwareCatalog search failed: " + FormatExceptionDetail(ex);
+                _logger?.LogWarning(ex, "HardwareCatalog search failed during GSD device search");
             }
 
             try
@@ -1210,7 +1204,7 @@ namespace TiaMcpServer.Siemens
             }
             catch (Exception ex)
             {
-                LastAddDeviceError = "GSDML scan failed: " + FormatExceptionDetail(ex);
+                _logger?.LogWarning(ex, "GSDML scan failed during GSD device search");
             }
 
             return results
@@ -1233,19 +1227,13 @@ namespace TiaMcpServer.Siemens
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (string.IsNullOrWhiteSpace(normalizedKeyword))
-            {
-                LastAddDeviceError = "Keyword is empty";
-                return results;
-            }
+                throw new PortalException(PortalErrorCode.InvalidParams, "Keyword is empty");
 
             try
             {
                 var catalog = _portal == null ? null : TryGetPropertyValue(_portal, "HardwareCatalog");
                 if (catalog == null)
-                {
-                    LastAddDeviceError = "TIA Portal HardwareCatalog is not available. Connect to TIA Portal first.";
-                    return results;
-                }
+                    throw new PortalException(PortalErrorCode.InvalidState, "TIA Portal HardwareCatalog is not available. Connect to TIA Portal first.");
 
                 foreach (var filter in BuildHardwareCatalogFilters(normalizedKeyword))
                 {
@@ -1262,9 +1250,13 @@ namespace TiaMcpServer.Siemens
                     }
                 }
             }
+            catch (PortalException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                LastAddDeviceError = "HardwareCatalog search failed: " + FormatExceptionDetail(ex);
+                _logger?.LogWarning(ex, "HardwareCatalog search failed");
             }
 
             return results
@@ -1295,7 +1287,7 @@ namespace TiaMcpServer.Siemens
 
             if (candidates.Count == 0)
             {
-                return (null, null, candidates, attempts, LastAddDeviceError ?? $"No hardware catalog candidates found for '{keyword}'");
+                return (null, null, candidates, attempts, $"No hardware catalog candidates found for '{keyword}'");
             }
 
             if (IsProjectNull())
@@ -1354,7 +1346,7 @@ namespace TiaMcpServer.Siemens
 
             if (candidates.Count == 0)
             {
-                return (null, null, candidates, attempts, LastAddDeviceError ?? $"No installed GSD/catalog candidates found for '{keyword}'");
+                return (null, null, candidates, attempts, $"No installed GSD/catalog candidates found for '{keyword}'");
             }
 
             if (IsProjectNull())

@@ -1649,9 +1649,6 @@ namespace TiaMcpServer.ModelContextProtocol
             try
             {
                 var dev = Portal.AddDevice(orderNumber, version, deviceName);
-                if (dev == null)
-                    throw new McpException($"Failed to add device '{deviceName}' ({orderNumber} {version}). LastError: {Portal.LastAddDeviceError}", McpErrorCode.InternalError);
-
                 return new ResponseMessage
                 {
                     Message = $"Device '{deviceName}' added",
@@ -1662,6 +1659,10 @@ namespace TiaMcpServer.ModelContextProtocol
                         ["name"] = dev.Name
                     }
                 };
+            }
+            catch (PortalException pex)
+            {
+                throw new McpException($"Failed to add device '{deviceName}' ({orderNumber} {version}) [{pex.Code}]: {pex.Message}", pex, McpErrorCode.InternalError);
             }
             catch (Exception ex) when (ex is not McpException)
             {
@@ -1753,13 +1754,17 @@ namespace TiaMcpServer.ModelContextProtocol
                     Keyword = keyword,
                     Count = items.Count,
                     Items = items,
-                    Error = success ? null : Portal.LastAddDeviceError,
+                    Error = success ? null : $"No matching hardware catalog candidates for '{keyword}'",
                     Meta = new JsonObject
                     {
                         ["timestamp"] = DateTime.Now,
                         ["success"] = success
                     }
                 };
+            }
+            catch (PortalException pex)
+            {
+                throw new McpException($"Failed searching hardware catalog for '{keyword}' [{pex.Code}]: {pex.Message}", pex, McpErrorCode.InternalError);
             }
             catch (Exception ex) when (ex is not McpException)
             {
