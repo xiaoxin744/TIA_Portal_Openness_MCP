@@ -47,7 +47,6 @@ namespace TiaMcpServer.Siemens
         public string? LastAddDeviceError { get; private set; }
         public string? LastConnectError { get; private set; }
         public string? LastImportError { get; private set; }
-        public string? LastCompileError { get; private set; }
 
         #region ctor
 
@@ -9806,23 +9805,16 @@ namespace TiaMcpServer.Siemens
             }
         }
 
-        public CompilerResult? CompileSoftware(string softwarePath, string password = "")
+        public CompilerResult CompileSoftware(string softwarePath, string password = "")
         {
             _logger?.LogInformation($"Compiling software by path: {softwarePath}");
-            LastCompileError = null;
 
             if (IsProjectNull())
-            {
-                LastCompileError = "Project is null";
-                return null; // "Error, no project";
-            }
+                throw new PortalException(PortalErrorCode.InvalidState, "Project is null");
 
             var softwareContainer = GetSoftwareContainer(softwarePath);
             if (softwareContainer?.Software == null)
-            {
-                LastCompileError = $"SoftwareContainer or Software not found for path '{softwarePath}'";
-                return null;
-            }
+                throw new PortalException(PortalErrorCode.NotFound, $"SoftwareContainer or Software not found for path '{softwarePath}'");
 
             if (!string.IsNullOrEmpty(password))
             {
@@ -9840,8 +9832,7 @@ namespace TiaMcpServer.Siemens
                         }
                         catch (Exception ex)
                         {
-                            LastCompileError = $"Safety login failed: {ex}";
-                            return null; // "Error, login to safety offline program failed";
+                            throw new PortalException(PortalErrorCode.OpennessError, $"Safety login failed: {ex.Message}", null, ex);
                         }
                     }
                 }
@@ -9853,38 +9844,35 @@ namespace TiaMcpServer.Siemens
                 {
                     ICompilable? compileService = plcSoftware.GetService<ICompilable>();
                     if (compileService == null)
-                    {
-                        LastCompileError = "plcSoftware.GetService<ICompilable>() returned null";
-                        return null;
-                    }
+                        throw new PortalException(PortalErrorCode.OpennessError, "plcSoftware.GetService<ICompilable>() returned null");
 
                     CompilerResult result = compileService.Compile();
 
                     if (result == null)
-                    {
-                        LastCompileError = "ICompilable.Compile() returned null";
-                        return null;
-                    }
+                        throw new PortalException(PortalErrorCode.OpennessError, "ICompilable.Compile() returned null");
 
                     return result;
                 }
+                catch (PortalException)
+                {
+                    throw;
+                }
                 catch (TargetInvocationException tie) when (tie.InnerException != null)
                 {
-                    LastCompileError = $"{tie.InnerException.GetType().FullName}: {tie.InnerException.Message}\n{tie.InnerException}";
-                    return null;
+                    throw new PortalException(PortalErrorCode.OpennessError, $"{tie.InnerException.GetType().FullName}: {tie.InnerException.Message}", null, tie.InnerException);
                 }
                 catch (Exception ex)
                 {
-                    LastCompileError = $"{ex.GetType().FullName}: {ex.Message}\n{ex}";
-                    return null; // "Error, compiling failed";
+                    throw new PortalException(PortalErrorCode.OpennessError, $"{ex.GetType().FullName}: {ex.Message}", null, ex);
                 }
             }
 
             var resolvedSoftware = softwareContainer?.Software;
-            LastCompileError = resolvedSoftware == null
-                ? $"SoftwareContainer or Software not found for path '{softwarePath}'"
-                : $"Software at '{softwarePath}' is not PlcSoftware. Type={resolvedSoftware.GetType().FullName}";
-            return null; // "Error";
+            throw new PortalException(
+                resolvedSoftware == null ? PortalErrorCode.NotFound : PortalErrorCode.InvalidState,
+                resolvedSoftware == null
+                    ? $"SoftwareContainer or Software not found for path '{softwarePath}'"
+                    : $"Software at '{softwarePath}' is not PlcSoftware. Type={resolvedSoftware.GetType().FullName}");
         }
 
         #endregion

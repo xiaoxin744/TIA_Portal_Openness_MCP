@@ -2487,12 +2487,16 @@ namespace TiaMcpServer.ModelContextProtocol
             if (!compileAfter || failed.Count != 0)
                 return null;
 
-            var result = Portal.CompileSoftware(softwarePath);
-            if (result != null)
+            try
+            {
+                var result = Portal.CompileSoftware(softwarePath);
                 return BuildCompileResponse(softwarePath, result);
-
-            failed.Add(new ImportFailure { Path = softwarePath, Error = Portal.LastCompileError ?? "CompileSoftware returned null" });
-            return null;
+            }
+            catch (PortalException pex)
+            {
+                failed.Add(new ImportFailure { Path = softwarePath, Error = $"[{pex.Code}] {pex.Message}" });
+                return null;
+            }
         }
 
         private static ResponseXmlBuild BuildOfflineXmlBuilderReport(JsonObject data, string successMessage)
@@ -5086,34 +5090,27 @@ namespace TiaMcpServer.ModelContextProtocol
             try
             {
                 var result = Portal.CompileSoftware(softwarePath, password);
-                if (result != null)
-                {
-                    var collected = CollectCompilerMessages(result.Messages);
+                var collected = CollectCompilerMessages(result.Messages);
 
-                    return new ResponseCompile
-                    {
-                        Message = $"Software '{softwarePath}' compiled. State={result.State} Errors={result.ErrorCount} Warnings={result.WarningCount}",
-                        State = result.State.ToString(),
-                        ErrorCount = result.ErrorCount,
-                        WarningCount = result.WarningCount,
-                        Messages = collected.Raw,
-                        Meta = new JsonObject
-                        {
-                            ["timestamp"] = DateTime.Now,
-                            ["success"] = !result.State.ToString().Equals("Error", StringComparison.OrdinalIgnoreCase),
-                            ["errorDetailCount"] = collected.Errors.Count,
-                            ["warningDetailCount"] = collected.Warnings.Count
-                        }
-                    };
-                }
-                else
+                return new ResponseCompile
                 {
-                    throw new McpException(
-                        string.IsNullOrWhiteSpace(Portal.LastCompileError)
-                            ? $"Failed compiling software '{softwarePath}': result is null"
-                            : $"Failed compiling software '{softwarePath}': {Portal.LastCompileError}",
-                        McpErrorCode.InternalError);
-                }
+                    Message = $"Software '{softwarePath}' compiled. State={result.State} Errors={result.ErrorCount} Warnings={result.WarningCount}",
+                    State = result.State.ToString(),
+                    ErrorCount = result.ErrorCount,
+                    WarningCount = result.WarningCount,
+                    Messages = collected.Raw,
+                    Meta = new JsonObject
+                    {
+                        ["timestamp"] = DateTime.Now,
+                        ["success"] = !result.State.ToString().Equals("Error", StringComparison.OrdinalIgnoreCase),
+                        ["errorDetailCount"] = collected.Errors.Count,
+                        ["warningDetailCount"] = collected.Warnings.Count
+                    }
+                };
+            }
+            catch (PortalException pex)
+            {
+                throw new McpException($"Failed compiling software '{softwarePath}' [{pex.Code}]: {pex.Message}", pex, McpErrorCode.InternalError);
             }
             catch (Exception ex) when (ex is not McpException)
             {
@@ -6018,9 +6015,9 @@ namespace TiaMcpServer.ModelContextProtocol
 
                 if (compileAfter && !(stopOnImportFailure && failed.Any()))
                 {
-                    var result = Portal.CompileSoftware(softwarePath);
-                    if (result != null)
+                    try
                     {
+                        var result = Portal.CompileSoftware(softwarePath);
                         var collected = CollectCompilerMessages(result.Messages);
                         compile = new ResponseCompile
                         {
@@ -6038,9 +6035,9 @@ namespace TiaMcpServer.ModelContextProtocol
                             }
                         };
                     }
-                    else
+                    catch (PortalException pex)
                     {
-                        failed.Add(new ImportFailure { Path = softwarePath, Error = Portal.LastCompileError ?? "CompileSoftware returned null" });
+                        failed.Add(new ImportFailure { Path = softwarePath, Error = $"[{pex.Code}] {pex.Message}" });
                     }
                 }
 
@@ -6061,14 +6058,6 @@ namespace TiaMcpServer.ModelContextProtocol
             try
             {
                 var result = Portal.CompileSoftware(softwarePath, password);
-                if (result == null)
-                {
-                    throw new McpException(
-                        string.IsNullOrWhiteSpace(Portal.LastCompileError)
-                            ? $"Failed compiling software '{softwarePath}': result is null"
-                            : $"Failed compiling software '{softwarePath}': {Portal.LastCompileError}",
-                        McpErrorCode.InternalError);
-                }
 
                 var raw = new List<string>();
                 var errs = new List<string>();
@@ -6103,6 +6092,10 @@ namespace TiaMcpServer.ModelContextProtocol
                         ["warningDetailCount"] = warns.Count
                     }
                 };
+            }
+            catch (PortalException pex)
+            {
+                throw new McpException($"Failed compiling software '{softwarePath}' [{pex.Code}]: {pex.Message}", pex, McpErrorCode.InternalError);
             }
             catch (Exception ex) when (ex is not McpException)
             {
