@@ -96,6 +96,15 @@ namespace TiaMcpServer
                     ? "TIA Portal will launch WITH user interface (--with-ui); slower cold start."
                     : "TIA Portal will launch headless (WithoutUserInterface) for faster startup; pass --with-ui to show the GUI.");
 
+                // CLI verb dispatch: `tia gen|patch|compile|export|import|describe|prewarm|schema|version`.
+                // Engine config (assembly resolver, version, headless) is already applied above, so verb
+                // handlers can connect immediately. Falls through to MCP host when args[0] isn't a verb.
+                if (args.Length > 0 && Cli.CliCommands.IsVerb(args[0]))
+                {
+                    Environment.Exit(Cli.CliCommands.Run(args));
+                    return;
+                }
+
                 if (options.AnalyzeReferenceAssets)
                 {
                     RunAnalyzeReferenceAssets(options);

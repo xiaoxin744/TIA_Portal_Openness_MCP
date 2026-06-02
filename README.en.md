@@ -1,6 +1,12 @@
-# TIA Portal MCP Server (v1.0.0 · V20 + V21 · S7DCL)
+# TIA Portal MCP Server (v2.0.0 · V20 + V21 · S7DCL · CLI)
 
 **English** · [中文](README.md)
+
+> **v2.0 — the same exe is also a declarative CLI (`tia`).** Any AI emits a
+> YAML/JSON spec, any engineer runs one command (`tia gen spec.yaml`) — no MCP
+> client required. Verbs: `gen` / `patch` / `compile` / `describe` / `export` /
+> `import` / `prewarm` / `schema` / `version`. Exit code 0/1/2. See
+> `docs/CLI_quickstart.md`. The MCP server behaviour is unchanged.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Release](https://img.shields.io/github/v/release/bulaofen0036-coder/TIA_Portal_Openness_MCP)](https://github.com/bulaofen0036-coder/TIA_Portal_Openness_MCP/releases) [![validate-bundle](https://github.com/bulaofen0036-coder/TIA_Portal_Openness_MCP/actions/workflows/validate.yml/badge.svg)](https://github.com/bulaofen0036-coder/TIA_Portal_Openness_MCP/actions/workflows/validate.yml)
 

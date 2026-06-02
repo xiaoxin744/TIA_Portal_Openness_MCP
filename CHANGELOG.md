@@ -1,5 +1,25 @@
 # Change Log
 
+## [2.0.0] - 2026-06-02
+
+声明式 CLI 大版本：**同一个 exe 既是 MCP 服务，也是命令行**。任意 AI 产出一份 YAML/JSON spec，任意工程师跑一条命令即可从零建/改博途工程——**无需 MCP 客户端、无需安装、门槛最低**。底层完全复用现有引擎，不重写。
+
+### 新增 — `tia` 命令行（薄层，复用现有引擎静态方法）
+
+- **`tia gen <spec.yaml|json>`**：一条命令从 spec 生成完整工程（= ScaffoldProject）。`--dry-run` 离线校验、`--json` 机器可读输出。
+- **`tia patch <spec.yaml|json>`**：把 spec **增量 upsert 到已有工程**（spec 内 `projectPath` 指向 .apXX）；spec 未提及的元素不动。`--no-overwrite` 保护手改的 LAD 代码块（UDT/DB/标签表始终按 spec 重同步）。
+- **`tia compile / describe / export / import / prewarm / schema / version / help`**：编译诊断、工程树、导出/导入、常驻 headless 预热（原生子命令，去掉 Python 依赖）、spec 字段速查、版本号。
+- **退出码契约**：0=成功 / 1=有失败步骤 / 2=错误，便于脚本与 AI 判读。
+
+### 输入 — YAML + JSON 双解析
+
+- 引入 YamlDotNet：`.json` 直通（AI 首选，零歧义），`.yaml/.yml` 解析并做标量类型推断；同一 spec 的 YAML 与 JSON 版产出一致（已离线验证）。
+
+### 形态
+
+- 仍是双 V20/V21 binary，仍为 MCP 服务（`tia` verb 之外的行为完全不变）；CLI 与 MCP 共享同一引擎，改一处两端受益。
+- 离线验证通过：`gen`/`patch` 的 `--dry-run`、YAML/JSON 等价、退出码、`schema`/`version`/`help`。**live 实机回归（真连 TIA 建工程/patch/compile/export/import/prewarm）待执行。**
+
 ## [1.0.0] - 2026-06-02
 
 首个 1.0 大版本，聚焦「快、好用、不出错」。

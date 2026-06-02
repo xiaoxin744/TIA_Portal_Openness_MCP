@@ -1,4 +1,4 @@
-# TIA Portal MCP 完整交付包（**v1.0.0** / V20+V21 + S7DCL）
+# TIA Portal MCP 完整交付包（**v2.0.0** / V20+V21 + S7DCL + CLI）
 
 [English](README.en.md) · **中文**
 
@@ -10,6 +10,19 @@
 
 在 **Windows + TIA Portal V20 或 V21** 下，通过 **MCP（stdio 或 HTTP）** 驱动博途：建项目、加硬件、生成 PLC（Tag/UDT/DB/SCL/LAD）、生成 **WinCC Unified** 画面与事件、编译诊断、保存。  
 包内含 **已编译运行时**、Skill、静态工具清单、能力矩阵、PLC/HMI 模板、**一键可读的项目蓝图**与手册。**不要求**另行克隆源码仓库。
+
+## v2.0.0 新功能 —— `tia` 命令行（门槛最低、任意 AI 可用）
+
+> **同一个 exe 既是 MCP 服务，也是命令行。** 任意 AI 产出一份 YAML/JSON spec，任意工程师跑一条命令即可从零建/改工程——**不需要 MCP 客户端、不需要安装**。底层完全复用现有引擎。详见 [`docs/CLI_quickstart.md`](docs/CLI_quickstart.md)。
+
+- **`tia gen <spec.yaml|json>`**：一条命令从 spec 建完整工程（= `ScaffoldProject`）。`--dry-run` 离线校验、`--json` 机器可读。
+- **`tia patch <spec>`**：把 spec **增量 upsert 进已有工程**（spec 内 `projectPath` 指向 `.apXX`），未提及的元素不动；`--no-overwrite` 保护手改的 LAD 代码块。
+- 还有 `tia compile / describe / export / import / prewarm / schema / version`。退出码 **0=成功 / 1=有失败步骤 / 2=错误**。
+- **零编程上手**：把 spec 拖到 `scripts\生成工程.bat` 上即可；`scripts\预热.bat` 常驻 headless 实例让后续命令 ~1s 连上。
+- **让任意 AI 生成 spec**：见 [`docs/AI_spec_prompt.md`](docs/AI_spec_prompt.md) —— 通用契约「产出一份 spec」，不要求 AI 支持 MCP。
+- **YAML + JSON 双解析**：JSON 首选（零歧义），YAML 便于人读写；同一 spec 两者产出一致。
+
+> 仍是双 V20/V21 binary、仍是完整 MCP 服务（`tia` verb 之外行为不变）。CLI 与 MCP 共享同一引擎。
 
 ## v1.0.0 新功能（快、好用、不出错）
 
