@@ -158,8 +158,10 @@ namespace TiaMcpServer.Cli
 
         private static void EnsureConnectedOpen(string projectPath)
         {
+            // Openness resolves a relative project path against the exe directory, not the shell's
+            // working dir — confusing failures. Resolve against CWD so `tia describe foo.ap21` works.
             if (!McpServer.Portal.IsConnected()) McpServer.Connect();
-            McpServer.OpenProject(projectPath);
+            McpServer.OpenProject(Path.GetFullPath(projectPath));
         }
 
         private static int Report(ResponseScaffold resp, bool asJson)
