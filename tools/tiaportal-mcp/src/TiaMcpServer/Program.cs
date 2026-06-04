@@ -693,7 +693,7 @@ namespace TiaMcpServer
         private static void RunFlowLightTest(CliOptions options)
         {
             var projectDirectory = string.IsNullOrWhiteSpace(options.ProjectDirectory)
-                ? @"C:\Users\XL626\Documents\Automation"
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Automation")
                 : options.ProjectDirectory!;
             var projectName = string.IsNullOrWhiteSpace(options.ProjectName)
                 ? "MCP_FlowLight_Test_" + DateTime.Now.ToString("yyyyMMdd_HHmm")
@@ -1079,8 +1079,6 @@ namespace TiaMcpServer
                 : options.ProjectName!;
             var workspace = Directory.GetCurrentDirectory();
             var screenImportPath = Path.Combine(workspace, "TMP_EXPORT", "optimized_hmi", "Screens", "主画面_优化.xml");
-            if (!File.Exists(screenImportPath))
-                screenImportPath = @"C:\Users\XL626\Desktop\PID博途块\TMP_EXPORT\optimized_hmi\Screens\主画面_优化.xml";
             var probeDir = Path.Combine(Path.GetTempPath(), "TiaMcpServer_Ktp700HmiImport_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(probeDir);
             var preparedScreenImportPath = PrepareClassicHmiScreenForKtp700(screenImportPath, probeDir);
@@ -1181,6 +1179,7 @@ namespace TiaMcpServer
             {
                 var dest = Path.Combine(outputDir, Path.GetFileName(sourcePath));
                 var doc = new XmlDocument();
+                doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
                 doc.PreserveWhitespace = true;
                 doc.Load(sourcePath);
 
@@ -2755,7 +2754,7 @@ namespace TiaMcpServer
 
         private static void RunAnalyzeHmiTemplateReference(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var templateDir = string.IsNullOrWhiteSpace(options.HmiTemplateDirectory)
                 ? Path.Combine(workspaceRoot, "docs", "hmi_templates")
                 : options.HmiTemplateDirectory!;
@@ -2789,7 +2788,7 @@ namespace TiaMcpServer
 
         private static void RunAnalyzeHmiComponentCatalog(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var templateDir = string.IsNullOrWhiteSpace(options.HmiTemplateDirectory)
                 ? Path.Combine(workspaceRoot, "docs", "hmi_templates")
                 : options.HmiTemplateDirectory!;
@@ -3696,7 +3695,7 @@ namespace TiaMcpServer
 
         private static void RunValidateGlobalLibraryMasterCopyImport(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var libraryPath = string.IsNullOrWhiteSpace(options.GlobalLibraryPackagePath)
                 ? string.IsNullOrWhiteSpace(options.ReferenceGlobalLibraryPath)
                     ? Path.Combine(workspaceRoot, "reference", "HMI_Template_Suite_WinCC_Unified_V18", "HMI Template Suite (WinCC Unified)_V18_V21")
@@ -3809,7 +3808,7 @@ namespace TiaMcpServer
 
         private static void RunValidateUnifiedHmiActionSyntaxCheck(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var projectDirectory = string.IsNullOrWhiteSpace(options.ProjectDirectory)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Automation")
                 : options.ProjectDirectory!;
@@ -3929,7 +3928,7 @@ namespace TiaMcpServer
 
         private static void RunGenerateHmiTemplateSyncPrecheck(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var templateDir = string.IsNullOrWhiteSpace(options.HmiTemplateDirectory)
                 ? Path.Combine(workspaceRoot, "docs", "hmi_templates")
                 : options.HmiTemplateDirectory!;
@@ -4074,7 +4073,7 @@ namespace TiaMcpServer
 
         private static void RunGenerateHmiTemplateMappingSkeleton(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var templateDir = string.IsNullOrWhiteSpace(options.HmiTemplateDirectory)
                 ? Path.Combine(workspaceRoot, "docs", "hmi_templates")
                 : options.HmiTemplateDirectory!;
@@ -4570,6 +4569,7 @@ namespace TiaMcpServer
             try
             {
                 var doc = new XmlDocument();
+                doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
                 doc.Load(path);
                 var tableNameNode = doc.SelectSingleNode("//*[local-name()='SW.WatchAndForceTables.PlcWatchTable']/*[local-name()='AttributeList']/*[local-name()='Name']");
                 if (tableNameNode != null)
@@ -4785,6 +4785,7 @@ namespace TiaMcpServer
                 try
                 {
                     var doc = new XmlDocument();
+                    doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
                     doc.Load(file);
                     foreach (XmlElement name in doc.GetElementsByTagName("Name").OfType<XmlElement>())
                     {
@@ -4829,7 +4830,7 @@ namespace TiaMcpServer
 
         private static void RunAnalyzeHmiTemplatePlcMapping(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var templateDir = string.IsNullOrWhiteSpace(options.HmiTemplateDirectory)
                 ? Path.Combine(workspaceRoot, "docs", "hmi_templates")
                 : options.HmiTemplateDirectory!;
@@ -4930,6 +4931,7 @@ namespace TiaMcpServer
                 try
                 {
                     var doc = new XmlDocument();
+                    doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
                     doc.Load(file);
                     var blockElement = doc.GetElementsByTagName("SW.Blocks.GlobalDB").OfType<XmlElement>().FirstOrDefault()
                         ?? doc.GetElementsByTagName("SW.Blocks.FB").OfType<XmlElement>().FirstOrDefault()
@@ -4993,6 +4995,7 @@ namespace TiaMcpServer
                 try
                 {
                     var doc = new XmlDocument();
+                    doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
                     doc.Load(file);
                     var udtElement = doc.GetElementsByTagName("SW.Types.PlcStruct").OfType<XmlElement>().FirstOrDefault();
                     if (udtElement == null) continue;
@@ -6028,7 +6031,7 @@ namespace TiaMcpServer
         {
             try
             {
-                var packRoot = Path.Combine(@"C:\Users\XL626\Desktop\PID博途块", "TIA_MCP_AI_PACK");
+                var packRoot = Path.Combine(Directory.GetCurrentDirectory(), "TIA_MCP_AI_PACK");
                 var refRoot = Path.Combine(packRoot, "references", "motor_minimal_latest_fixed");
                 var reportsRoot = Path.Combine(packRoot, "references", "reports");
                 Directory.CreateDirectory(refRoot);
@@ -6972,7 +6975,7 @@ END_DATA_BLOCK
 
         private static void RunValidateMappedHmiTemplateBindings(CliOptions options)
         {
-            var workspaceRoot = @"C:\Users\XL626\Desktop\PID博途块";
+            var workspaceRoot = Directory.GetCurrentDirectory();
             var projectDirectory = string.IsNullOrWhiteSpace(options.ProjectDirectory)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Automation")
                 : options.ProjectDirectory!;
@@ -7705,6 +7708,7 @@ END_DATA_BLOCK
         {
             var result = new Dictionary<string, (string DataType, string Address)>(StringComparer.OrdinalIgnoreCase);
             var doc = new XmlDocument();
+            doc.XmlResolver = null; // 安全：禁用外部实体/DTD 解析，防 XXE
             doc.Load(exportPath);
             foreach (XmlElement node in doc.GetElementsByTagName("SW.Tags.PlcTag"))
             {

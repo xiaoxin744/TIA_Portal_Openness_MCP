@@ -1,5 +1,17 @@
 # Change Log
 
+## [2.0.1] - 2026-06-04
+
+安全与隐私小版本（仅 `Program.cs`，无行为变更、无新工具）。
+
+### 安全 — 修复 XML 外部实体（XXE）
+
+- 导入/解析 XML 工程产物（块、画面、变量表、监控表）的 6 处 `XmlDocument.Load(...)` 之前统一设置 `XmlResolver = null`，禁用外部实体/DTD 解析。修复在 .NET Framework 4.8 上导入**第三方恶意 XML 文件**时可被 XXE（读取本地文件、SSRF、billion-laughs DoS）的风险。`XDocument.Load/Parse` 路径默认 `DtdProcessing.Prohibit`，本就安全，未改。
+
+### 隐私 — 移除源码中的开发机个人路径
+
+- 清除 `Program.cs` 里 11 处硬编码的作者机器路径（`C:\Users\<用户名>\...`），改为中性的 `Directory.GetCurrentDirectory()` / `MyDocuments` 兜底。这些只出现在 `--run-*` 开发者自测处理器的默认值中，不影响正常 MCP/CLI 运行。
+
 ## [2.0.0] - 2026-06-02
 
 声明式 CLI 大版本：**同一个 exe 既是 MCP 服务，也是命令行**。任意 AI 产出一份 YAML/JSON spec，任意工程师跑一条命令即可从零建/改博途工程——**无需 MCP 客户端、无需安装、门槛最低**。底层完全复用现有引擎，不重写。
