@@ -1,5 +1,19 @@
 # Change Log
 
+## [2.1.0] - 2026-06-09 - 在线只读实时读值（S7 / OPC UA / 监控表 / 离线溯因）
+
+TIA Openness 是工程接口，**读不到运行中 CPU 的实时值**。本版新增一条独立于 Openness 的**运行时只读通道**，直连 CPU 读实时值。新增 5 个工具（全部 `[L2]`，**纯只读：不写、不强制、不改运行模式**），工具数 181→186。
+
+### 新增 — 运行时只读实时读值
+
+- `ReadPlcLiveValuesS7` / `ProbeS7CpuIdentity` — S7 协议（ISO-on-TCP, 端口 102），绝对地址 `DB34.DBD116:DINT`/`M0.0`/`IW76` 等，单次几十~几百 ms。`expectModuleContains` 身份护栏（型号正向不匹配才中止）。S7-1200/1500 需开启 PUT/GET 且读非优化 DB（M/I/Q 不受限）。
+- `ReadPlcLiveValuesOpcUa` — OPC UA（端口 4840，匿名无加密），**会话按 endpoint 缓存复用**（首次 ~1.7s，之后 ~150-220ms，返回 `reusedSession`），会话失效自动重建一次；对锁的等待有界，避免不可达服务器导致后续调用堆积。
+- `MonitorWatchTableLiveS7` — 经 Openness 取已有监控表条目地址（只读）+ S7 实时读值；按 TIA `DEC_signed` 显示格式映射为有符号 `INT/DINT/SINT`，有符号量不再被误显为大正数。符号/优化条目列为 unresolved（改用 OPC UA）。
+- `TraceTagCause` — **离线静态溯因**：导出代码块解析 SimaticML（LAD 线圈 S/R/= 与 ST 的 `:=`），找出写入该变量的网络及门控条件操作数，再用 `ReadPlcLiveValuesS7` 实时读这些条件判断当前由谁驱动。不联机、无需交叉引用服务。
+- 每个响应都带 `safety` 自证字段（`readOnly/writesValues/usesForce/changesCpuMode` 全 false）。
+- 真机验证（安全PLC, CPU 1211C @192.168.0.32）：S7 / OPC UA / 监控表三法与博途显示逐字节交叉核对一致。
+- 新增中文使用指南 `docs/在线实时读值_使用指南.md`。
+
 ## [2.0.2] - 2026-06-08
 
 V20 兼容性修复小版本（修复 GitHub issue #2）。

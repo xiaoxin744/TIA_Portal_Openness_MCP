@@ -1,6 +1,6 @@
 ﻿{
   "schemaVersion": "2026-05-25",
-  "bundleVersion": "2.0.2",
+  "bundleVersion": "2.1.0",
   "packageName": "TIA_MCP_交付包_20260525_V20S7DCL_184330",
   "packageType": "tia-portal-mcp-complete-offline-delivery-bundle",
   "generatedAt": "2026-05-31T20:30:00+08:00",
@@ -58,14 +58,18 @@
     "exitCodes": { "0": "success", "1": "completed with failed steps", "2": "error" }
   },
   "capabilities": {
-    "mcpToolCount": 181,
+    "mcpToolCount": 186,
     "mcpToolLayers": {
       "L0": 6,
       "L1": 31,
-      "L2": 144
+      "L2": 149
     },
     "newToolsThisRelease": [
-      "WritePlcSclSourceFile"
+      "ProbeS7CpuIdentity",
+      "ReadPlcLiveValuesS7",
+      "ReadPlcLiveValuesOpcUa",
+      "MonitorWatchTableLiveS7",
+      "TraceTagCause"
     ],
     "removedToolsThisRelease": [],
     "hmiTemplateJsonCount": 8,
@@ -82,6 +86,7 @@
       "WinCC Unified screen/tag/connection generation",
       "Unified HMI screen designJson application",
       "button Down/Up actions and tag dynamization",
+      "read-only online live-value monitoring over S7 (port 102) and OPC UA (port 4840), plus watch-table live read and offline tag causal trace",
       "reflection-based API discovery for uncovered Openness shapes"
     ]
   },

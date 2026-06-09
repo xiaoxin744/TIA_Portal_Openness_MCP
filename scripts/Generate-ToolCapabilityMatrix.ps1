@@ -17,11 +17,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
-if (-not $SourceFile) { $SourceFile = Join-Path $root "tools\tiaportal-mcp\src\TiaMcpServer\ModelContextProtocol\McpServer.cs" }
 if (-not $OutFile)    { $OutFile    = Join-Path $root "docs\tool-capability-matrix.md" }
-if (-not (Test-Path -LiteralPath $SourceFile)) { throw "Source not found: $SourceFile" }
 
-$text = [System.IO.File]::ReadAllText($SourceFile, [System.Text.Encoding]::UTF8)
+# [McpServerTool] attributes live across the McpServer partial files (McpServer.cs,
+# McpServer.Runtime.cs, ...). Scan all of them so partial-file tools are not missed.
+if (-not $SourceFile) {
+    $dir = Join-Path $root "tools\tiaportal-mcp\src\TiaMcpServer\ModelContextProtocol"
+    $files = Get-ChildItem -LiteralPath $dir -Filter "McpServer*.cs" | Sort-Object Name
+    if (-not $files) { throw "No McpServer*.cs found in: $dir" }
+    $text = ($files | ForEach-Object { [System.IO.File]::ReadAllText($_.FullName, [System.Text.Encoding]::UTF8) }) -join "`n"
+} else {
+    if (-not (Test-Path -LiteralPath $SourceFile)) { throw "Source not found: $SourceFile" }
+    $text = [System.IO.File]::ReadAllText($SourceFile, [System.Text.Encoding]::UTF8)
+}
 
 # Match each attribute block: [McpServerTool(Name = "X"), Description( <body> )]
 # Body may span lines as "..." + "..." concatenation; Singleline lets . cross newlines.
