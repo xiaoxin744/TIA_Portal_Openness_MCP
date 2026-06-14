@@ -1,3 +1,5 @@
+#社区链接https://linux.do/
+原作者bulaofen:https://github.com/bulaofen0036-coder/TIA_Portal_Openness_MCP/commits?author=bulaofen
 # TIA Portal MCP 完整交付包（**v2.2.1** / V20+V21 + S7DCL + CLI + 在线只读监控）
 
 [English](README.en.md) · **中文**
